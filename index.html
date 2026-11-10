@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Focus - Pomodoro Space Focus App</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🚀</text></svg>">
+    <!-- CSS stylesheet -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="stars"></div>
+    <div class="glowing-orb orb-1"></div>
+    <div class="glowing-orb orb-2"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo-area">
+                <i data-lucide="rocket" class="logo-icon"></i>
+                <h1 class="logo-text">SPACE <span class="accent-text">FOCUS</span></h1>
+            </div>
+            <div class="header-stats">
+                <div class="stat-badge" id="btn-request-notification" title="Bật/Tắt thông báo trình duyệt">
+                    <i data-lucide="bell-off" id="notification-icon"></i>
+                    <span id="notification-status" data-i18n="notification_disabled">Thông báo tắt</span>
+                </div>
+                <div class="stat-badge streak-badge">
+                    <i data-lucide="flame" class="streak-icon"></i>
+                    <span>Streak: <strong id="current-streak-val">0</strong> <span data-i18n="days_lbl">ngày</span></span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="app-main">
+            <!-- Left Panel (Focus Hub) -->
+            <div class="panel-left">
+                <!-- Pomodoro Timer Card -->
+                <section class="card glass-card timer-card">
+                    <div class="timer-utility-controls">
+                        <button class="util-btn" id="btn-zoom-timer" title="Phóng đại đồng hồ (Chế độ Zen)">
+                            <i data-lucide="maximize-2"></i>
+                        </button>
+                        <button class="util-btn" id="btn-pip-timer" title="Ghim cửa sổ đồng hồ (Always on Top)">
+                            <i data-lucide="external-link"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="session-selector">
+                        <button class="session-btn active" data-time="25" data-i18n="pomo_25_btn">25 Phút</button>
+                        <button class="session-btn" data-time="45" data-i18n="pomo_45_btn">45 Phút</button>
+                        <button class="session-btn" data-time="90" data-i18n="pomo_90_btn">90 Phút</button>
+                    </div>
+                    <div class="custom-session-wrapper">
+                        <input type="number" id="custom-session-input" min="1" max="180" placeholder="Tự chỉnh (phút)">
+                        <button class="btn btn-outline" id="btn-set-custom-session" data-i18n="apply_btn">Áp dụng</button>
+                    </div>
+                    <div class="session-task-wrapper">
+                        <input type="text" id="session-task-input" placeholder="Tên công việc đang tập trung (VD: Học tập, Code...)">
+                    </div>
+
+                    <div id="timer-card-content" class="timer-content-holder">
+                        <div class="timer-display-container">
+                            <svg class="timer-progress-svg" viewBox="0 0 200 200">
+                                <circle class="progress-bg" cx="100" cy="100" r="88" />
+                                <circle class="progress-bar" id="progress-bar-circle" cx="100" cy="100" r="88" />
+                            </svg>
+                            <div class="timer-text-container">
+                                <div class="timer-time" id="timer-time-display">25:00</div>
+                                <div class="timer-state" id="timer-state-display">Tập Trung</div>
+                            </div>
+                        </div>
+
+                        <div class="timer-controls">
+                            <button class="control-btn" id="btn-reset" title="Đặt lại">
+                                <i data-lucide="rotate-ccw"></i>
+                            </button>
+                            <button class="control-btn play-btn" id="btn-play-pause" title="Bắt đầu/Tạm dừng">
+                                <i data-lucide="play" id="play-icon"></i>
+                            </button>
+                            <button class="control-btn" id="btn-skip" title="Bỏ qua">
+                                <i data-lucide="skip-forward"></i>
+                            </button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Daily Time Budget Card -->
+                <section class="card glass-card day-budget-card">
+                    <div class="card-title">
+                        <i data-lucide="clock"></i>
+                        <h2 data-i18n="day_budget_title">Thời Gian Còn Lại Hôm Nay</h2>
+                    </div>
+                    <div class="day-budget-settings">
+                        <div class="time-input-group">
+                            <label class="time-input-label">
+                                <span data-i18n="day_start_lbl">Bắt đầu:</span>
+                                <input type="time" id="day-budget-start" value="08:00" class="input-field time-field">
+                            </label>
+                            <label class="time-input-label">
+                                <span data-i18n="day_end_lbl">Kết thúc:</span>
+                                <input type="time" id="day-budget-end" value="22:00" class="input-field time-field">
+                            </label>
+                        </div>
+                    </div>
+                    <div class="day-budget-display">
+                        <div class="budget-countdown" id="day-budget-countdown">--:--:--</div>
+                        <div class="budget-progress-container">
+                            <div class="budget-progress-bar" id="day-budget-progress"></div>
+                        </div>
+                        <div class="budget-status-text" id="day-budget-status">Ngày làm việc đang diễn ra</div>
+                    </div>
+                </section>
+
+                <!-- Ambient Audio Card -->
+                <section class="card glass-card audio-card">
+                    <div class="card-title">
+                        <i data-lucide="music"></i>
+                        <h2 data-i18n="audio_card_title">Nhạc Nền Tập Trung</h2>
+                    </div>
+                    <div class="audio-options">
+                        <button class="audio-btn active" data-sound="none" title="Không dùng">
+                            <i data-lucide="volume-x"></i>
+                            <span data-i18n="sound_none">Tắt</span>
+                        </button>
+                        <div class="preset-btn-wrapper" data-preset="lofi">
+                            <button class="audio-btn" data-sound="lofi" title="Nhạc Lo-fi nhẹ nhàng">
+                                <i data-lucide="headphones"></i>
+                                <span data-i18n="sound_lofi">Lo-Fi</span>
+                            </button>
+                            <span class="btn-delete-preset" data-preset="lofi" title="Xóa nhạc mặc định này">×</span>
+                        </div>
+                        <div class="preset-btn-wrapper" data-preset="rain">
+                            <button class="audio-btn" data-sound="rain" title="Tiếng mưa rơi thư giãn">
+                                <i data-lucide="cloud-rain"></i>
+                                <span data-i18n="sound_rain">Mưa Rơi</span>
+                            </button>
+                            <span class="btn-delete-preset" data-preset="rain" title="Xóa nhạc mặc định này">×</span>
+                        </div>
+                        <div class="preset-btn-wrapper" data-preset="brown">
+                            <button class="audio-btn" data-sound="brown" title="Tiếng ồn nâu sâu lắng">
+                                <i data-lucide="wind"></i>
+                                <span data-i18n="sound_brown">Ồn Nâu</span>
+                            </button>
+                            <span class="btn-delete-preset" data-preset="brown" title="Xóa nhạc mặc định này">×</span>
+                        </div>
+                        <div class="preset-btn-wrapper" data-preset="binaural">
+                            <button class="audio-btn" data-sound="binaural" title="Sóng não tập trung sâu">
+                                <i data-lucide="zap"></i>
+                                <span data-i18n="sound_binaural">Binaural</span>
+                            </button>
+                            <span class="btn-delete-preset" data-preset="binaural" title="Xóa nhạc mặc định này">×</span>
+                        </div>
+                    </div>
+                    <div class="restore-presets-container hidden" id="restore-presets-container">
+                        <button class="btn btn-outline" id="btn-restore-presets" data-i18n="restore_default_music">Khôi phục nhạc mặc định</button>
+                    </div>
+                    
+                    <!-- New Custom Playlist Section -->
+                    <div class="custom-playlist-section">
+                        <div class="playlist-header">
+                            <h3 data-i18n="custom_playlist_title">Danh Sách Nhạc Của Bạn</h3>
+                            <label for="custom-audio-file" class="add-track-btn" title="Thêm nhạc (.mp3, .wav...)">
+                                <i data-lucide="plus"></i>
+                                <span data-i18n="add_btn">Thêm</span>
+                            </label>
+                            <input type="file" id="custom-audio-file" accept="audio/*" class="hidden" multiple>
+                        </div>
+                        <div class="custom-track-list" id="custom-track-list">
+                            <!-- Dynamically loaded custom tracks go here -->
+                            <div class="no-tracks-text" data-i18n="no_tracks_loaded">Chưa tải bài nhạc nào...</div>
+                        </div>
+                    </div>
+                    <div class="volume-control">
+                        <i data-lucide="volume-2"></i>
+                        <input type="range" id="audio-volume" min="0" max="1" step="0.05" value="0.5">
+                    </div>
+                    
+                    <!-- Audio Player Timeline & Speed Controls -->
+                    <div class="audio-player-controls hidden" id="audio-player-controls">
+                        <div class="audio-time-row">
+                            <span id="audio-current-time">00:00</span>
+                            <input type="range" id="audio-timeline" min="0" max="100" value="0">
+                            <span id="audio-duration">00:00</span>
+                        </div>
+                        <div class="audio-speed-row">
+                            <span data-i18n="audio_speed_lbl">Tốc độ:</span>
+                            <select id="audio-speed-select">
+                                <option value="0.5">0.5x</option>
+                                <option value="0.75">0.75x</option>
+                                <option value="1.0" selected>1.0x (Chuẩn)</option>
+                                <option value="1.25">1.25x</option>
+                                <option value="1.5">1.5x</option>
+                                <option value="2.0">2.0x</option>
+                            </select>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Daily Quote Card -->
+                <section class="card glass-card quote-card">
+                    <div class="quote-content">
+                        <p class="quote-text" id="daily-quote-text">"Đường đi khó, không khó vì ngăn sông cách núi, mà khó vì lòng người ngại núi e sông."</p>
+                        <span class="quote-author" id="daily-quote-author">— Nguyễn Thái Học</span>
+                    </div>
+                </section>
+
+                <!-- Today's Focus Logs Card -->
+                <section class="card glass-card today-logs-card">
+                    <div class="card-title">
+                        <i data-lucide="list-todo"></i>
+                        <h2 data-i18n="today_activity_title">Hoạt Động Hôm Nay</h2>
+                    </div>
+                    <div class="today-stats-summary">
+                        <span data-i18n="completed_today_lbl">Đã hoàn thành:</span>
+                        <strong id="today-stats-completed">0 / 4</strong>
+                    </div>
+                    <div class="today-logs-list" id="today-logs-list">
+                        <div class="no-logs-text" data-i18n="no_activity_today">Chưa có hoạt động tập trung nào trong hôm nay...</div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Panel (Stats & Streak Tracking) -->
+            <div class="panel-right">
+                <!-- Streak Recovery Mission (Hidden by default, shown when streak is broken) -->
+                <section class="card glass-card streak-recovery-card hidden" id="streak-recovery-section">
+                    <div class="card-title alert-title">
+                        <i data-lucide="alert-triangle" class="warn-icon"></i>
+                        <h2 data-i18n="recovery_title">Lỡ Chuỗi Tập Trung (Streak Broken)!</h2>
+                    </div>
+                    <p class="recovery-desc" data-i18n="recovery_desc">Bạn đã bỏ lỡ việc tập trung ngày hôm qua. Đặt một <strong>Nhiệm vụ Phục hồi</strong> hôm nay để cứu lại chuỗi ngày phát sáng của bạn!</p>
+                    <div class="recovery-form" id="recovery-form">
+                        <input type="text" id="recovery-task-input" placeholder="Ví dụ: Đọc sách 15 phút, Học từ mới, Dọn dẹp bàn..." required>
+                        <button type="button" class="btn btn-primary" id="btn-save-recovery" data-i18n="recovery_set_btn">Thiết lập</button>
+                    </div>
+                    <div class="recovery-active hidden" id="recovery-active-container">
+                        <div class="recovery-task-box">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="chk-recovery-complete">
+                                <span class="checkmark"></span>
+                                <span class="task-text" id="recovery-task-display" data-i18n="recovery_loading_text">Đang tải nhiệm vụ...</span>
+                            </label>
+                        </div>
+                        <span class="recovery-badge" data-i18n="recovery_running_lbl">Đang chạy</span>
+                    </div>
+                </section>
+
+                <!-- Daily Target Card -->
+                <section class="card glass-card target-card">
+                    <div class="target-header">
+                        <div class="card-title">
+                            <i data-lucide="target"></i>
+                            <h2 data-i18n="daily_target_title">Mục Tiêu Hôm Nay</h2>
+                        </div>
+                        <div class="target-settings">
+                            <input type="number" id="daily-goal-input" min="1" max="20" value="4">
+                            <span>Pomo</span>
+                        </div>
+                    </div>
+                    <div class="target-progress-wrapper">
+                        <div class="progress-info">
+                            <span id="target-progress-text">0 / 4 Pomodoros</span>
+                            <span id="target-percentage">0%</span>
+                        </div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="target-progress-bar"></div>
+                        </div>
+                    </div>
+                    <div class="daily-summary">
+                        <div class="summary-item">
+                            <span class="summary-label" data-i18n="target_completed_lbl">Đã hoàn thành hôm nay</span>
+                            <span class="summary-value" id="today-completed-count">0</span>
+                        </div>
+                        <div class="summary-item">
+                            <span class="summary-label" data-i18n="target_longest_lbl">Chuỗi ngày dài nhất</span>
+                            <span class="summary-value" id="longest-streak-val">0</span>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Streak Calendar Card -->
+                <section class="card glass-card calendar-card">
+                    <div class="calendar-header">
+                        <div class="card-title">
+                            <i data-lucide="calendar"></i>
+                            <h2 data-i18n="calendar_card_title">Lịch Streak Tập Trung</h2>
+                        </div>
+                        <div class="calendar-month-year" id="calendar-month-year-display">Tháng 7, 2026</div>
+                    </div>
+                    
+                    <div class="calendar-view-selector">
+                        <button class="view-type-btn active" data-view="month" data-i18n="view_month_btn">Tháng</button>
+                        <button class="view-type-btn" data-view="week" data-i18n="view_week_btn">Tuần</button>
+                        <button class="view-type-btn" data-view="range" data-i18n="view_range_btn">Chọn Khoảng Ngày</button>
+                    </div>
+                    <div class="calendar-range-inputs hidden" id="calendar-range-inputs">
+                        <input type="date" id="calendar-start-date">
+                        <span data-i18n="calendar_to_lbl">đến</span>
+                        <input type="date" id="calendar-end-date">
+                        <button class="btn btn-primary" id="btn-apply-calendar-range" data-i18n="view_btn">Xem</button>
+                    </div>
+
+                    <!-- Calendar Wrapper with SVG layer for glowing line -->
+                    <div class="calendar-grid-wrapper">
+                        <!-- SVG background layer for the connection lines -->
+                        <svg class="streak-svg-layer" id="streak-svg-layer"></svg>
+                        
+                        <div class="calendar-weekdays">
+                            <div data-i18n="day_sun">CN</div>
+                            <div data-i18n="day_mon">T2</div>
+                            <div data-i18n="day_tue">T3</div>
+                            <div data-i18n="day_wed">T4</div>
+                            <div data-i18n="day_thu">T5</div>
+                            <div data-i18n="day_fri">T6</div>
+                            <div data-i18n="day_sat">T7</div>
+                        </div>
+                        <div class="calendar-days" id="calendar-days-grid">
+                            <!-- Days will be dynamically generated by JS -->
+                        </div>
+                    </div>
+                    <div class="calendar-legend-container">
+                        <div class="calendar-legend">
+                            <span class="legend-item"><span class="legend-color completed-low"></span> 1-2 Pomo</span>
+                            <span class="legend-item"><span class="legend-color completed-mid"></span> 3-4 Pomo</span>
+                            <span class="legend-item"><span class="legend-color completed-high"></span> 5+ Pomo</span>
+                            <span class="legend-item"><span class="legend-color recovery-glow"></span> <span data-i18n="legend_restored">Khôi phục</span></span>
+                        </div>
+                    </div>
+                    <!-- Clickable Day Details Section -->
+                    <div class="day-details-panel hidden" id="day-details-panel">
+                        <div class="day-details-header">
+                            <i data-lucide="info" class="details-icon"></i>
+                            <h4 id="day-details-title" data-i18n="day_details_title">Chi tiết ngày</h4>
+                        </div>
+                        <div class="day-details-content">
+                            <div class="details-stat-row">
+                                <span data-i18n="day_details_pomo_lbl">Số Pomodoro hoàn thành:</span>
+                                <strong id="day-details-pomo">0</strong>
+                            </div>
+                            <div class="details-stat-row" id="day-details-recovery-row">
+                                <span data-i18n="day_details_status_lbl">Trạng thái Streak:</span>
+                                <strong id="day-details-status" class="status-normal" data-i18n="status_normal">Bình thường</strong>
+                            </div>
+                            <div class="details-stat-row hidden" id="day-details-task-row">
+                                <span data-i18n="day_details_recovery_task_lbl">Nhiệm vụ cứu:</span>
+                                <span id="day-details-task-name">Đọc sách</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Line Chart Card -->
+                <section class="card glass-card chart-card">
+                    <div class="card-title">
+                        <i data-lucide="trending-up"></i>
+                        <h2 data-i18n="chart_title">Hiệu Suất Trong Tháng</h2>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </section>
+                
+                <!-- Backup, Sync & Export Card -->
+                <section class="card glass-card backup-card">
+                    <div class="card-title">
+                        <i data-lucide="database"></i>
+                        <h2 data-i18n="backup_title">Sao Lưu & Đồng Bộ Dữ Liệu</h2>
+                    </div>
+                    <div class="backup-settings">
+                        <div class="sync-status-row">
+                            <span class="sync-label" data-i18n="cloud_sync_lbl">Trạng thái đồng bộ Cloud:</span>
+                            <span class="sync-status" id="cloud-sync-status">
+                                <i data-lucide="cloud-lightning" class="sync-icon-warn"></i> <span data-i18n="not_synced_lbl">Chưa đồng bộ</span>
+                            </span>
+                        </div>
+                        <div class="backup-toggle-row">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="chk-auto-backup" checked>
+                                <span class="checkmark"></span>
+                                <span class="task-text" data-i18n="auto_backup_desc">Tự động sao lưu liên tục vào ổ cứng & cloud</span>
+                            </label>
+                        </div>
+                    </div>
+                    <div class="backup-actions">
+                        <button class="btn btn-outline" id="btn-export-json" title="Tải file dữ liệu .json về máy">
+                            <i data-lucide="download"></i> <span data-i18n="backup_json_btn">Sao Lưu (JSON)</span>
+                        </button>
+                        <label for="import-json-file" class="btn btn-outline import-json-label" title="Khôi phục dữ liệu từ file .json">
+                            <i data-lucide="upload"></i> <span data-i18n="restore_btn">Khôi Phục</span>
+                        </label>
+                        <input type="file" id="import-json-file" accept=".json" class="hidden">
+                        <button class="btn btn-primary" id="btn-export-excel" title="Xuất báo cáo Excel (CSV) để gửi">
+                            <i data-lucide="file-spreadsheet"></i> <span data-i18n="export_excel_btn">Xuất Excel (CSV)</span>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- System Settings Card -->
+                <section class="card glass-card settings-card">
+                    <div class="card-title">
+                        <i data-lucide="settings"></i>
+                        <h2 data-i18n="system_settings_title">Cài Đặt Hệ Thống</h2>
+                    </div>
+                    <div class="settings-group">
+                        <h3 data-i18n="appearance_heading">Giao Diện & Ngôn Ngữ</h3>
+                        
+                        <!-- Light/Dark Mode -->
+                        <div class="settings-row">
+                            <span data-i18n="theme_mode_lbl">Chế độ hiển thị:</span>
+                            <div class="theme-toggle-group">
+                                <button class="theme-btn active" id="btn-theme-dark" title="Chế độ tối">
+                                    <i data-lucide="moon"></i>
+                                </button>
+                                <button class="theme-btn" id="btn-theme-light" title="Chế độ sáng">
+                                    <i data-lucide="sun"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Language Selector -->
+                        <div class="settings-row">
+                            <span data-i18n="language_lbl">Ngôn ngữ:</span>
+                            <div class="lang-toggle-group">
+                                <button class="lang-btn active" id="btn-lang-vi">VI</button>
+                                <button class="lang-btn" id="btn-lang-en">EN</button>
+                            </div>
+                        </div>
+
+                        <!-- Wallpaper Selector -->
+                        <div class="settings-row wallpaper-row">
+                            <span data-i18n="wallpaper_lbl">Hình nền:</span>
+                            <div class="wallpaper-selector">
+                                <button class="wall-btn active" data-wallpaper="space" title="Không gian sâu thẳm"></button>
+                                <button class="wall-btn" data-wallpaper="galaxy" title="Galaxy Mờ Ảo"></button>
+                                <button class="wall-btn" data-wallpaper="neon" title="Huyền ảo Neon"></button>
+                                <button class="wall-btn" data-wallpaper="minimal" title="Tối giản tối"></button>
+                                <button class="wall-btn" data-wallpaper="zen" title="Tĩnh lặng Zen"></button>
+                                <button class="wall-btn hidden" data-wallpaper="custom" id="btn-wall-custom-select" title="Hình nền tự chọn"></button>
+                                <label for="custom-wallpaper-file" class="wall-btn-upload" title="Tải hình nền của bạn">
+                                    <i data-lucide="plus"></i>
+                                </label>
+                                <input type="file" id="custom-wallpaper-file" accept="image/*" class="hidden">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3 data-i18n="telegram_heading">Thông Báo Telegram</h3>
+                        <p class="settings-desc" data-i18n="telegram_desc">Nhận thông báo tự động về tiến độ hoàn thành Pomodoro của bạn.</p>
+                        
+                        <div class="tg-config-inputs">
+                            <div class="tg-input-wrapper">
+                                <input type="password" id="tg-bot-token" placeholder="Telegram Bot Token" class="input-field">
+                            </div>
+                            <div class="tg-input-wrapper">
+                                <input type="text" id="tg-chat-id" placeholder="Telegram Chat ID" class="input-field">
+                            </div>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="chk-tg-enable">
+                                <span class="checkmark"></span>
+                                <span class="task-text" data-i18n="tg_auto_send">Tự động gửi thông báo khi xong phiên</span>
+                            </label>
+                        </div>
+                        <div class="tg-actions">
+                            <button class="btn btn-outline" id="btn-tg-test" data-i18n="tg_test_btn">Gửi Thử Tin Nhắn</button>
+                        </div>
+                    </div>
+
+                    <div class="settings-group">
+                        <h3 data-i18n="messenger_heading">Thông Báo Messenger</h3>
+                        <p class="settings-desc" data-i18n="messenger_desc">Liên kết tài khoản để tự động gửi tin nhắn báo cáo tiến độ Pomodoro qua Facebook Messenger.</p>
+                        
+                        <div class="tg-config-inputs">
+                            <div class="tg-input-wrapper">
+                                <input type="password" id="fb-page-token" placeholder="Facebook Page Access Token" class="input-field">
+                            </div>
+                            <div class="tg-input-wrapper">
+                                <input type="text" id="fb-recipient-id" placeholder="Messenger Recipient ID (PSID)" class="input-field">
+                            </div>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="chk-fb-enable">
+                                <span class="checkmark"></span>
+                                <span class="task-text" data-i18n="fb_auto_send">Tự động gửi thông báo qua Messenger khi xong phiên</span>
+                            </label>
+                        </div>
+                        <div class="tg-actions">
+                            <button class="btn btn-outline" id="btn-fb-test" data-i18n="fb_test_btn">Gửi Thử Messenger</button>
+                        </div>
+                    </div>
+                </section>
+
+    <!-- Developer/Mock Panel -->
+    <section class="card glass-card dev-card collapsed" id="dev-panel">
+        <div class="dev-header" id="dev-panel-toggle">
+            <div class="card-title">
+                <i data-lucide="terminal"></i>
+                <h2 data-i18n="dev_panel_title">Bảng Kiểm Thử & Giả Lập Dữ Liệu</h2>
+            </div>
+            <i data-lucide="chevron-down" class="dev-toggle-icon"></i>
+        </div>
+        <div class="dev-content">
+            <p class="dev-info" data-i18n="dev_panel_desc">Dùng các chức năng này để tạo nhanh lịch sử giúp hiển thị Biểu đồ, Lịch Streak và kiểm thử lỗi streak.</p>
+            <div class="dev-actions">
+                <button class="btn btn-outline" id="btn-mock-streak" data-i18n="mock_streak_btn">Tạo Streak 7 Ngày</button>
+                <button class="btn btn-outline" id="btn-mock-miss" data-i18n="mock_miss_btn">Tạo Lỗi Lỡ Streak Hôm Qua</button>
+                <button class="btn btn-outline btn-warn" id="btn-clear-data" data-i18n="clear_data_btn">Xóa Hết Dữ Liệu</button>
+            </div>
+            <div class="dev-custom-add">
+                <h4 data-i18n="dev_custom_add_lbl">Thêm thủ công Pomo cho ngày:</h4>
+                <div class="custom-add-row">
+                    <input type="date" id="dev-date-input">
+                    <input type="number" id="dev-count-input" min="1" max="10" value="4">
+                    <button class="btn btn-primary" id="btn-dev-add" data-i18n="add_btn">Thêm</button>
+                </div>
+            </div>
+        </div>
+    </section>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer-text" data-i18n="footer_text">
+            Space Focus Pomodoro © 2026. Thiết kế vì sự tập trung tối đa.
+        </footer>
+    </div>
+
+    <!-- Zen Focus Mode Overlay -->
+    <div class="zen-overlay hidden" id="zen-overlay">
+        <button class="zen-close-btn" id="btn-close-zen" title="Thu nhỏ">
+            <i data-lucide="minimize-2"></i>
+        </button>
+        <div class="zen-content-wrapper">
+            <!-- Timer components will be moved here in Zen Mode -->
+        </div>
+    </div>
+
+    <!-- Floating Timer Card Fallback (Internal PiP) -->
+    <div class="floating-timer-card hidden" id="floating-timer-card">
+        <div class="floating-header">
+            <span>Đồng hồ ghim</span>
+            <button id="btn-close-floating" title="Thu nhỏ lại">
+                <i data-lucide="x"></i>
+            </button>
+        </div>
+        <div class="floating-body">
+            <!-- Timer components will be moved here in Floating Mode -->
+        </div>
+    </div>
+
+    <!-- Script loading -->
+    <script src="app.js"></script>
+    <script>
+        // Initialize lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+    </script>
+</body>
+</html>
